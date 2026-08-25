@@ -1,11 +1,19 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bycrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async register(data: RegisterDto) {
     const existingUser = await this.prisma.user.findUnique({
@@ -42,6 +50,38 @@ export class AuthService {
       email: user.email,
       companyId: company.id,
       companyName: company.name,
+    };
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { company: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const passwordMatches = await bycrypt.compare(password, user.password);
+
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Invalid password');
+    }
+
+    const payload = { sub: user.id, email: user.email };
+
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        companyId: user.companyId,
+        companyName: user.company.name,
+      },
     };
   }
 }

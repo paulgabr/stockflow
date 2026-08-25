@@ -10,6 +10,15 @@ async function bootstrap() {
     .setTitle('StockFlow API')
     .setDescription('Inventory Management SaaS')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter JWT token',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
