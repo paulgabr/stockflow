@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -52,5 +53,10 @@ export class ProductsController {
     @Body() data: UpdateProductDto,
   ) {
     return this.productsService.update(request.user.companyId, id, data);
+  }
+
+  @Delete(':id')
+  remove(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
+    return this.productsService.delete(request.user.companyId, id);
   }
 }

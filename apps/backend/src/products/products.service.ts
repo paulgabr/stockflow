@@ -33,12 +33,18 @@ export class ProductsService {
   }
 
   async findOne(companyId: string, id: string) {
-    return this.prisma.product.findFirst({
+    const product = await this.prisma.product.findFirst({
       where: {
         companyId,
         id,
       },
     });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return product;
   }
 
   async update(companyId: string, id: string, data: UpdateProductDto) {
@@ -59,5 +65,26 @@ export class ProductsService {
       },
       data,
     });
+  }
+
+  async delete(companyId: string, id: string) {
+    const product = await this.prisma.product.findFirst({
+      where: {
+        id,
+        companyId,
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    await this.prisma.product.delete({
+      where: {
+        id: product.id,
+      },
+    });
+
+    return { message: 'Product deleted successfully' };
   }
 }
