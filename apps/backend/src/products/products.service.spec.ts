@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 
 import { ProductsService } from './products.service';
 import { PrismaService } from '../database/prisma.service';
@@ -124,6 +124,24 @@ describe('ProductsService', () => {
         },
       });
     });
+
+    it('should throw ConflictException when SKU already exists', async () => {
+      const productData = {
+        name: 'Notebook Dell',
+        sku: 'NOTE-001',
+        description: 'Notebook para escritório',
+        price: 3499.9,
+        quantity: 10,
+      };
+
+      prismaMock.product.create.mockRejectedValue({
+        code: 'P2002',
+      });
+
+      await expect(service.create('company-1', productData)).rejects.toThrow(
+        ConflictException,
+      );
+    });
   });
 
   describe('update', () => {
@@ -180,6 +198,27 @@ describe('ProductsService', () => {
       await expect(
         service.update('company-1', 'product-999', { name: 'Updated Name' }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException when SKU already exists during update', async () => {
+      const existingProduct = {
+        id: 'product-1',
+        name: 'Notebook Dell',
+        sku: 'NOTE-001',
+        description: 'Notebook para escritório',
+        price: 3499.9,
+        quantity: 10,
+        companyId: 'company-1',
+      };
+
+      prismaMock.product.findFirst.mockResolvedValue(existingProduct);
+      prismaMock.product.update.mockRejectedValue({
+        code: 'P2002',
+      });
+
+      await expect(
+        service.update('company-1', 'product-1', { sku: 'NOTE-001' }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

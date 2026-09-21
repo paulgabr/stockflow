@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -9,16 +13,28 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(companyId: string, data: CreateProductDto) {
-    return this.prisma.product.create({
-      data: {
-        name: data.name,
-        sku: data.sku,
-        description: data.description,
-        price: data.price,
-        quantity: data.quantity,
-        companyId,
-      },
-    });
+    try {
+      return await this.prisma.product.create({
+        data: {
+          name: data.name,
+          sku: data.sku,
+          description: data.description,
+          price: data.price,
+          quantity: data.quantity,
+          companyId,
+        },
+      });
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Product with the same SKU already exists');
+      }
+      throw error;
+    }
   }
 
   async findAll(companyId: string) {
@@ -48,23 +64,35 @@ export class ProductsService {
   }
 
   async update(companyId: string, id: string, data: UpdateProductDto) {
-    const product = await this.prisma.product.findFirst({
-      where: {
-        id,
-        companyId,
-      },
-    });
+    try {
+      const product = await this.prisma.product.findFirst({
+        where: {
+          id,
+          companyId,
+        },
+      });
 
-    if (!product) {
-      throw new NotFoundException('Product not found');
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
+      return await this.prisma.product.update({
+        where: {
+          id: product.id,
+        },
+        data,
+      });
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Product with the same SKU already exists');
+      }
+      throw error;
     }
-
-    return this.prisma.product.update({
-      where: {
-        id: product.id,
-      },
-      data,
-    });
   }
 
   async delete(companyId: string, id: string) {
