@@ -70,10 +70,10 @@ export class AuthService {
     }
 
     const payload = {
-			sub: user.id, 
-			email: user.email, 
-			companyId: user.companyId,
-		};
+      sub: user.id,
+      email: user.email,
+      companyId: user.companyId,
+    };
 
     const accessToken = await this.jwtService.signAsync(payload);
 
