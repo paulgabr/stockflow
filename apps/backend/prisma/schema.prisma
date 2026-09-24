@@ -16,6 +16,7 @@ model Company {
 
   users    User[]
   products Product[]
+  stockMovements StockMovement[]
 
   @@map("companies")
 }
@@ -47,7 +48,32 @@ model Product {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  stockMovements StockMovement[]
+
   @@unique([companyId, sku])
   @@index([companyId])
   @@map("products")
+}
+
+
+model StockMovement {
+  id          String   @id @default(uuid())
+  type        StockMovementType
+  quantity    Int
+  createdAt   DateTime @default(now())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([companyId])
+  @@map("stock_movements")
+}
+
+enum StockMovementType {
+  IN
+  OUT
 }
