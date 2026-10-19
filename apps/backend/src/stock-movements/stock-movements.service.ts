@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../database/prisma.service';
 
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
+import { FindStockMovementsQueryDto } from './dto/find-stock-movements-query.dto';
 
 import { StockMovementType } from '../../generated/prisma/client';
 
@@ -62,5 +63,39 @@ export class StockMovementsService {
         product: updatedProduct,
       };
     });
+  }
+
+  async findAll(companyId: string, query: FindStockMovementsQueryDto) {
+    const { type, page = 1, limit = 10 } = query;
+
+    const where = {
+      companyId,
+      ...(type && { type }),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.stockMovement.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          product: true,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.stockMovement.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

@@ -22,6 +22,10 @@ describe('StockMovementsService', () => {
     product: {
       findFirst: jest.fn(),
     },
+    stockMovement: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
     $transaction: jest.fn(
       (callback: (transaction: typeof transactionMock) => Promise<unknown>) =>
         callback(transactionMock),
@@ -185,6 +189,126 @@ describe('StockMovementsService', () => {
     expect(result).toEqual({
       movement,
       product: updatedProduct,
+    });
+  });
+
+  it('should return paginated stock movements for the company', async () => {
+    const movements = [
+      {
+        id: 'movement-1',
+        type: StockMovementType.IN,
+        quantity: 10,
+        createdAt: new Date(),
+        productId: 'product-1',
+        companyId: 'company-1',
+        product: {
+          id: 'product-1',
+          name: 'Notebook Dell',
+          sku: 'NOTE-001',
+        },
+      },
+      {
+        id: 'movement-2',
+        type: StockMovementType.OUT,
+        quantity: 3,
+        createdAt: new Date(),
+        productId: 'product-2',
+        companyId: 'company-1',
+        product: {
+          id: 'product-2',
+          name: 'Mouse Logitech',
+          sku: 'MOUSE-001',
+        },
+      },
+    ];
+
+    prismaMock.stockMovement.findMany.mockResolvedValue(movements);
+    prismaMock.stockMovement.count.mockResolvedValue(2);
+
+    const result = await service.findAll('company-1', {});
+
+    expect(prismaMock.stockMovement.findMany).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        product: true,
+      },
+      skip: 0,
+      take: 10,
+    });
+
+    expect(prismaMock.stockMovement.count).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+      },
+    });
+
+    expect(result).toEqual({
+      data: movements,
+      meta: {
+        page: 1,
+        limit: 10,
+        total: 2,
+        totalPages: 1,
+      },
+    });
+  });
+
+  it('should combine type filter with pagination', async () => {
+    const movements = [
+      {
+        id: 'movement-11',
+        type: StockMovementType.OUT,
+        quantity: 2,
+        createdAt: new Date(),
+        productId: 'product-1',
+        companyId: 'company-1',
+      },
+    ];
+
+    prismaMock.stockMovement.findMany.mockResolvedValue(movements);
+    prismaMock.stockMovement.count.mockResolvedValue(11);
+
+    const result = await service.findAll('company-1', {
+      type: StockMovementType.OUT,
+      page: 2,
+      limit: 10,
+    });
+
+    expect(prismaMock.stockMovement.findMany).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+        type: StockMovementType.OUT,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        product: true,
+      },
+      skip: 10,
+      take: 10,
+    });
+
+    expect(prismaMock.stockMovement.count).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+        type: StockMovementType.OUT,
+      },
+    });
+
+    expect(result).toEqual({
+      data: movements,
+      meta: {
+        page: 2,
+        limit: 10,
+        total: 11,
+        totalPages: 2,
+      },
     });
   });
 });
