@@ -60,13 +60,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     const passwordMatches = await bycrypt.compare(password, user.password);
 
     if (!passwordMatches) {
-      throw new UnauthorizedException('Invalid password');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     const payload = {

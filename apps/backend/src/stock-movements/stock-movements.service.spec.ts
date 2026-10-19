@@ -11,7 +11,9 @@ describe('StockMovementsService', () => {
 
   const transactionMock = {
     product: {
-      update: jest.fn(),
+      findFirst: jest.fn(),
+      updateMany: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
     },
     stockMovement: {
       create: jest.fn(),
@@ -19,9 +21,6 @@ describe('StockMovementsService', () => {
   };
 
   const prismaMock = {
-    product: {
-      findFirst: jest.fn(),
-    },
     stockMovement: {
       findMany: jest.fn(),
       count: jest.fn(),
@@ -53,7 +52,7 @@ describe('StockMovementsService', () => {
   });
 
   it('should throw NotFoundException when product does not exist', async () => {
-    prismaMock.product.findFirst.mockResolvedValue(null);
+    transactionMock.product.findFirst.mockResolvedValue(null);
 
     await expect(
       service.create('company-1', {
@@ -63,15 +62,23 @@ describe('StockMovementsService', () => {
       }),
     ).rejects.toThrow(NotFoundException);
 
-    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+    expect(transactionMock.product.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'product-1',
+        companyId: 'company-1',
+      },
+    });
+    expect(transactionMock.product.updateMany).not.toHaveBeenCalled();
+    expect(transactionMock.stockMovement.create).not.toHaveBeenCalled();
   });
 
   it('should throw BadRequestException when OUT quantity is greater than stock', async () => {
-    prismaMock.product.findFirst.mockResolvedValue({
+    transactionMock.product.findFirst.mockResolvedValue({
       id: 'product-1',
       quantity: 10,
       companyId: 'company-1',
     });
+    transactionMock.product.updateMany.mockResolvedValue({ count: 0 });
 
     await expect(
       service.create('company-1', {
@@ -81,7 +88,16 @@ describe('StockMovementsService', () => {
       }),
     ).rejects.toThrow(BadRequestException);
 
-    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+    expect(transactionMock.product.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'product-1',
+        quantity: { gte: 15 },
+      },
+      data: {
+        quantity: { decrement: 15 },
+      },
+    });
+    expect(transactionMock.stockMovement.create).not.toHaveBeenCalled();
   });
 
   it('should increase product quantity when movement type is IN', async () => {
@@ -104,8 +120,9 @@ describe('StockMovementsService', () => {
       companyId: 'company-1',
     };
 
-    prismaMock.product.findFirst.mockResolvedValue(product);
-    transactionMock.product.update.mockResolvedValue(updatedProduct);
+    transactionMock.product.findFirst.mockResolvedValue(product);
+    transactionMock.product.updateMany.mockResolvedValue({ count: 1 });
+    transactionMock.product.findUniqueOrThrow.mockResolvedValue(updatedProduct);
     transactionMock.stockMovement.create.mockResolvedValue(movement);
 
     const result = await service.create('company-1', {
@@ -114,12 +131,12 @@ describe('StockMovementsService', () => {
       quantity: 5,
     });
 
-    expect(transactionMock.product.update).toHaveBeenCalledWith({
+    expect(transactionMock.product.updateMany).toHaveBeenCalledWith({
       where: {
         id: 'product-1',
       },
       data: {
-        quantity: 15,
+        quantity: { increment: 5 },
       },
     });
 
@@ -158,8 +175,9 @@ describe('StockMovementsService', () => {
       companyId: 'company-1',
     };
 
-    prismaMock.product.findFirst.mockResolvedValue(product);
-    transactionMock.product.update.mockResolvedValue(updatedProduct);
+    transactionMock.product.findFirst.mockResolvedValue(product);
+    transactionMock.product.updateMany.mockResolvedValue({ count: 1 });
+    transactionMock.product.findUniqueOrThrow.mockResolvedValue(updatedProduct);
     transactionMock.stockMovement.create.mockResolvedValue(movement);
 
     const result = await service.create('company-1', {
@@ -168,12 +186,13 @@ describe('StockMovementsService', () => {
       quantity: 3,
     });
 
-    expect(transactionMock.product.update).toHaveBeenCalledWith({
+    expect(transactionMock.product.updateMany).toHaveBeenCalledWith({
       where: {
         id: 'product-1',
+        quantity: { gte: 3 },
       },
       data: {
-        quantity: 7,
+        quantity: { decrement: 3 },
       },
     });
 

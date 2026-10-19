@@ -16,36 +16,42 @@ export class StockMovementsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(companyId: string, data: CreateStockMovementDto) {
-    const product = await this.prisma.product.findFirst({
-      where: {
-        id: data.productId,
-        companyId,
-      },
-    });
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    if (
-      data.type === StockMovementType.OUT &&
-      product.quantity < data.quantity
-    ) {
-      throw new BadRequestException('Insufficient stock');
-    }
-
-    const newQuantity =
-      data.type === StockMovementType.IN
-        ? product.quantity + data.quantity
-        : product.quantity - data.quantity;
-
     return this.prisma.$transaction(async (transaction) => {
-      const updatedProduct = await transaction.product.update({
+      const product = await transaction.product.findFirst({
+        where: {
+          id: data.productId,
+          companyId,
+        },
+      });
+
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
+      // Stock check and update happen in a single atomic UPDATE, so
+      // concurrent OUT movements can never push the quantity below zero.
+      const { count } = await transaction.product.updateMany({
         where: {
           id: product.id,
+          ...(data.type === StockMovementType.OUT && {
+            quantity: { gte: data.quantity },
+          }),
         },
         data: {
-          quantity: newQuantity,
+          quantity:
+            data.type === StockMovementType.IN
+              ? { increment: data.quantity }
+              : { decrement: data.quantity },
+        },
+      });
+
+      if (count === 0) {
+        throw new BadRequestException('Insufficient stock');
+      }
+
+      const updatedProduct = await transaction.product.findUniqueOrThrow({
+        where: {
+          id: product.id,
         },
       });
 
