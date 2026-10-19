@@ -56,6 +56,7 @@ describe('ProductsService', () => {
       expect(prismaMock.product.findMany).toHaveBeenCalledWith({
         where: {
           companyId: 'company-1',
+          archivedAt: null,
         },
         orderBy: {
           createdAt: 'desc',
@@ -82,6 +83,7 @@ describe('ProductsService', () => {
         where: {
           id: 'product-1',
           companyId: 'company-1',
+          archivedAt: null,
         },
       });
     });
@@ -181,6 +183,7 @@ describe('ProductsService', () => {
         where: {
           id: 'product-1',
           companyId: 'company-1',
+          archivedAt: null,
         },
       });
 
@@ -223,7 +226,7 @@ describe('ProductsService', () => {
   });
 
   describe('remove', () => {
-    it('should delete a product from the company', async () => {
+    it('should archive a product from the company', async () => {
       const existingProduct = {
         id: 'product-1',
         name: 'Notebook',
@@ -231,26 +234,35 @@ describe('ProductsService', () => {
       };
 
       prismaMock.product.findFirst.mockResolvedValue(existingProduct);
-      prismaMock.product.delete.mockResolvedValue(existingProduct);
+      prismaMock.product.update.mockResolvedValue({
+        ...existingProduct,
+        archivedAt: new Date(),
+      });
 
       const result = await service.delete('company-1', 'product-1');
 
       expect(result).toEqual({
-        message: 'Product deleted successfully',
+        message: 'Product archived successfully',
       });
 
       expect(prismaMock.product.findFirst).toHaveBeenCalledWith({
         where: {
           id: 'product-1',
           companyId: 'company-1',
+          archivedAt: null,
         },
       });
 
-      expect(prismaMock.product.delete).toHaveBeenCalledWith({
+      expect(prismaMock.product.update).toHaveBeenCalledWith({
         where: {
           id: 'product-1',
         },
+        data: {
+          archivedAt: expect.any(Date) as Date,
+        },
       });
+
+      expect(prismaMock.product.delete).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when deleting a nonexistent product', async () => {
@@ -260,7 +272,7 @@ describe('ProductsService', () => {
         NotFoundException,
       );
 
-      expect(prismaMock.product.delete).not.toHaveBeenCalled();
+      expect(prismaMock.product.update).not.toHaveBeenCalled();
     });
   });
 });

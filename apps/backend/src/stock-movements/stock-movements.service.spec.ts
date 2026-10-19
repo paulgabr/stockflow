@@ -66,6 +66,7 @@ describe('StockMovementsService', () => {
       where: {
         id: 'product-1',
         companyId: 'company-1',
+        archivedAt: null,
       },
     });
     expect(transactionMock.product.updateMany).not.toHaveBeenCalled();

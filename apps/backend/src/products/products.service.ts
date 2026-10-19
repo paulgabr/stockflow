@@ -41,6 +41,7 @@ export class ProductsService {
     return this.prisma.product.findMany({
       where: {
         companyId,
+        archivedAt: null,
       },
       orderBy: {
         createdAt: 'desc',
@@ -53,6 +54,7 @@ export class ProductsService {
       where: {
         companyId,
         id,
+        archivedAt: null,
       },
     });
 
@@ -69,6 +71,7 @@ export class ProductsService {
         where: {
           id,
           companyId,
+          archivedAt: null,
         },
       });
 
@@ -95,11 +98,14 @@ export class ProductsService {
     }
   }
 
+  // Products are archived instead of deleted so their stock movement
+  // history is preserved.
   async delete(companyId: string, id: string) {
     const product = await this.prisma.product.findFirst({
       where: {
         id,
         companyId,
+        archivedAt: null,
       },
     });
 
@@ -107,12 +113,15 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    await this.prisma.product.delete({
+    await this.prisma.product.update({
       where: {
         id: product.id,
       },
+      data: {
+        archivedAt: new Date(),
+      },
     });
 
-    return { message: 'Product deleted successfully' };
+    return { message: 'Product archived successfully' };
   }
 }
