@@ -1,4 +1,4 @@
-import styles from "./login.module.css";
+import styles from "./auth.module.css";
 
 type Crate = { width: number; tone: "light" | "mid" | "dark" };
 

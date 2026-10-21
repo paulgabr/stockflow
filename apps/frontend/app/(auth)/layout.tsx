@@ -1,13 +1,7 @@
-import type { Metadata } from "next";
 import { Boxes, History, ShieldCheck, Zap } from "lucide-react";
 
+import styles from "./auth.module.css";
 import { FlowLanes } from "./flow-lanes";
-import { LoginForm } from "./login-form";
-import styles from "./login.module.css";
-
-export const metadata: Metadata = {
-  title: "Entrar · StockFlow",
-};
 
 const features = [
   { icon: Zap, text: "Entradas e saídas atualizam o saldo na hora" },
@@ -15,7 +9,11 @@ const features = [
   { icon: ShieldCheck, text: "Dados da sua empresa isolados e protegidos" },
 ];
 
-export default function LoginPage() {
+export default function AuthLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <main className={styles.page}>
       <section className={styles.brand}>
@@ -48,14 +46,7 @@ export default function LoginPage() {
       </section>
 
       <section className={styles.panel}>
-        <div className={styles.formWrap}>
-          <header className={styles.formHeader}>
-            <h2>Entrar</h2>
-            <p>Bem-vindo de volta. Acesse sua conta para continuar.</p>
-          </header>
-
-          <LoginForm />
-        </div>
+        <div className={styles.formWrap}>{children}</div>
       </section>
     </main>
   );
