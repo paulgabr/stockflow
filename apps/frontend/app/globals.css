@@ -1,26 +1,112 @@
-@import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --moss-50: #f4f6ef;
+  --moss-100: #e6ebdb;
+  --moss-200: #cdd7b8;
+  --moss-300: #aebd8e;
+  --moss-400: #8ea268;
+  --moss-500: #71864c;
+  --moss-600: #586b3a;
+  --moss-700: #455430;
+  --moss-800: #384429;
+  --moss-900: #2f3924;
+  --moss-950: #181f11;
+
+  --sand-50: #fafaf6;
+  --sand-100: #f2f1ea;
+  --sand-200: #e4e2d6;
+  --sand-300: #cfccbb;
+  --sand-500: #8a8775;
+  --sand-700: #4f4d40;
+  --sand-900: #22211b;
+
+  --color-bg: var(--sand-50);
+  --color-surface: #ffffff;
+  --color-text: var(--sand-900);
+  --color-text-muted: var(--sand-500);
+  --color-border: var(--sand-200);
+  --color-border-strong: var(--sand-300);
+  --color-primary: var(--moss-600);
+  --color-primary-hover: var(--moss-700);
+  --color-primary-contrast: #ffffff;
+  --color-focus: var(--moss-400);
+  --color-danger: #b4432f;
+  --color-danger-bg: #fbeeea;
+  --color-warning: #8a6a12;
+  --color-warning-bg: #fbf4dd;
+
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 1px 2px rgb(24 31 17 / 0.06);
+  --shadow-md: 0 4px 16px rgb(24 31 17 / 0.08);
+  --shadow-lg: 0 24px 48px rgb(24 31 17 / 0.12);
+
+  --transition: 160ms ease;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
