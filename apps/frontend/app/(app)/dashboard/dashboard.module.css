@@ -1,0 +1,164 @@
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.statIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--moss-50);
+  color: var(--color-primary);
+}
+
+.stat[data-alert] .statIcon {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.panel {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.panelTitle {
+  margin-bottom: var(--space-4);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.movements {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.movement {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.movement:first-child {
+  border-top: 0;
+}
+
+.movementIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.movementIcon[data-type="IN"] {
+  background: var(--moss-50);
+  color: var(--moss-600);
+}
+
+.movementIcon[data-type="OUT"] {
+  background: var(--sand-100);
+  color: var(--sand-700);
+}
+
+.movementProduct {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.movementName {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movementSku {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.movementQuantity {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.movementQuantity[data-type="IN"] {
+  color: var(--moss-600);
+}
+
+.movementQuantity[data-type="OUT"] {
+  color: var(--sand-700);
+}
+
+.movementDate {
+  min-width: 96px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .stat {
+    padding: var(--space-4);
+  }
+
+  .statIcon {
+    margin-bottom: var(--space-2);
+  }
+
+  .statValue {
+    font-size: 24px;
+  }
+
+  .movement {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .movementDate {
+    display: none;
+  }
+}
