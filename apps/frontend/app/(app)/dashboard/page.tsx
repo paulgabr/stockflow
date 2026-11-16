@@ -6,13 +6,24 @@ import {
   Boxes,
   Package,
   PackageX,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { apiFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/current-user";
-import type { Paginated, Product, StockMovement } from "@/lib/types";
+import {
+  adjustmentReasonLabels,
+  getMovementDelta,
+  movementTypeLabels,
+} from "@/lib/stock-movements";
+import type {
+  Paginated,
+  Product,
+  StockMovement,
+  StockMovementType,
+} from "@/lib/types";
 
 import styles from "./dashboard.module.css";
 
@@ -27,6 +38,12 @@ const dateFormat = new Intl.DateTimeFormat("pt-BR", {
   hour: "2-digit",
   minute: "2-digit",
 });
+
+const movementIcons: Record<StockMovementType, typeof ArrowDownToLine> = {
+  IN: ArrowDownToLine,
+  OUT: ArrowUpFromLine,
+  ADJUSTMENT: SlidersHorizontal,
+};
 
 export default async function DashboardPage() {
   const [user, products, movements] = await Promise.all([
@@ -81,36 +98,46 @@ export default async function DashboardPage() {
           <EmptyState
             icon={ArrowLeftRight}
             title="Nenhuma movimentação ainda"
-            description="As entradas e saídas de estoque aparecem aqui assim que forem registradas."
+            description="Entradas, saídas e ajustes de estoque aparecem aqui assim que forem registrados."
           />
         ) : (
           <ul className={styles.movements}>
             {movements.data.map((movement) => {
-              const isIn = movement.type === "IN";
+              const delta = getMovementDelta(movement);
+              const Icon = movementIcons[movement.type];
+              const label =
+                movement.type === "ADJUSTMENT" && movement.reason
+                  ? `${movementTypeLabels.ADJUSTMENT} · ${adjustmentReasonLabels[movement.reason]}`
+                  : movementTypeLabels[movement.type];
 
               return (
                 <li key={movement.id} className={styles.movement}>
-                  <span className={styles.movementIcon} data-type={movement.type}>
-                    {isIn ? (
-                      <ArrowDownToLine size={16} aria-hidden />
-                    ) : (
-                      <ArrowUpFromLine size={16} aria-hidden />
-                    )}
+                  <span
+                    className={styles.movementIcon}
+                    data-type={movement.type}
+                    title={label}
+                  >
+                    <Icon size={16} aria-hidden />
                   </span>
                   <span className={styles.movementProduct}>
                     <span className={styles.movementName}>
                       {movement.product.name}
                     </span>
-                    <span className={styles.movementSku}>
-                      {movement.product.sku}
+                    <span className={styles.movementMeta}>
+                      <span className={styles.movementSku}>
+                        {movement.product.sku}
+                      </span>
+                      {" · "}
+                      {label}
                     </span>
                   </span>
-                  <span className={styles.movementQuantity} data-type={movement.type}>
-                    <span className="visually-hidden">
-                      {isIn ? "Entrada de" : "Saída de"}
-                    </span>
-                    {isIn ? "+" : "−"}
-                    {numberFormat.format(movement.quantity)}
+                  <span
+                    className={styles.movementQuantity}
+                    data-type={movement.type}
+                    data-direction={delta >= 0 ? "up" : "down"}
+                  >
+                    {delta >= 0 ? "+" : "−"}
+                    {numberFormat.format(Math.abs(delta))}
                   </span>
                   <time
                     className={styles.movementDate}

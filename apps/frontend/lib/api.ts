@@ -6,6 +6,16 @@ import { getSessionToken } from "./session";
 
 export const API_URL = process.env.API_URL ?? "http://localhost:3000";
 
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    path: string,
+  ) {
+    super(`API request failed: ${status} ${path}`);
+    this.name = "ApiError";
+  }
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getSessionToken();
 
@@ -24,7 +34,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   }
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${path}`);
+    throw new ApiError(response.status, path);
   }
 
   return response.json() as Promise<T>;

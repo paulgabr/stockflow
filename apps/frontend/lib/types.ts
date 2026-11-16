@@ -17,13 +17,26 @@ export type Product = {
   updatedAt: string;
 };
 
-export type StockMovementType = "IN" | "OUT";
+export type StockMovementType = "IN" | "OUT" | "ADJUSTMENT";
+
+export type StockAdjustmentReason =
+  | "INITIAL_STOCK"
+  | "INVENTORY_COUNT"
+  | "ENTRY_ERROR"
+  | "DAMAGE_OR_LOSS"
+  | "OTHER";
 
 export type StockMovement = {
   id: string;
   type: StockMovementType;
+  // Always positive; use getMovementDelta() for the signed change.
   quantity: number;
   createdAt: string;
+  // Only set for ADJUSTMENT movements.
+  reason: StockAdjustmentReason | null;
+  note: string | null;
+  previousQuantity: number | null;
+  newQuantity: number | null;
   productId: string;
   product: Product;
 };

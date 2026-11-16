@@ -1,25 +1,57 @@
 import type { Metadata } from "next";
-import { Package } from "lucide-react";
+import { Package, Plus } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { apiFetch } from "@/lib/api";
+import type { Product } from "@/lib/types";
+
+import { ProductFormDialog } from "./product-dialogs";
+import { ProductsTable } from "./products-table";
+import styles from "./products.module.css";
 
 export const metadata: Metadata = {
   title: "Produtos · StockFlow",
 };
 
-export default function ProductsPage() {
+function NewProductButton() {
+  return (
+    <ProductFormDialog
+      trigger={
+        <button type="button" className={styles.primaryButton}>
+          <Plus size={18} aria-hidden />
+          Novo produto
+        </button>
+      }
+    />
+  );
+}
+
+export default async function ProductsPage() {
+  const products = await apiFetch<Product[]>("/products");
+
   return (
     <>
       <PageHeader
         title="Produtos"
         description="Cadastre e acompanhe o saldo de cada item do seu estoque."
+        actions={products.length > 0 && <NewProductButton />}
       />
-      <EmptyState
-        icon={Package}
-        title="Em construção"
-        description="A listagem de produtos chega na próxima etapa."
-      />
+
+      {products.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title="Nenhum produto cadastrado"
+          description="Os produtos que você cadastrar aparecem aqui, com preço e saldo em estoque."
+          action={
+            <div className={styles.emptyAction}>
+              <NewProductButton />
+            </div>
+          }
+        />
+      ) : (
+        <ProductsTable products={products} />
+      )}
     </>
   );
 }
