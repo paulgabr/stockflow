@@ -1,5 +1,4 @@
 import {
-  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -27,8 +26,6 @@ export class UpdateProductDto {
   @IsOptional()
   price?: number;
 
-  @IsInt()
-  @Min(0)
-  @IsOptional()
-  quantity?: number;
+  // Stock is changed through POST /stock-movements/adjustments, so every
+  // change is recorded in the movement history.
 }

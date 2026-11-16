@@ -1,15 +1,20 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
 
+import { CreateStockAdjustmentDto } from './dto/create-stock-adjustment.dto';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { FindStockMovementsQueryDto } from './dto/find-stock-movements-query.dto';
 
 import { StockMovementType } from '../../generated/prisma/client';
+
+export const STOCK_CHANGED_MESSAGE =
+  'Stock quantity changed during the adjustment, please try again';
 
 @Injectable()
 export class StockMovementsService {
@@ -68,6 +73,64 @@ export class StockMovementsService {
       return {
         movement,
         product: updatedProduct,
+      };
+    });
+  }
+
+  // Sets the stock to the correct balance (e.g. after an inventory count or to
+  // fix a typo) and records the difference as an ADJUSTMENT movement.
+  async adjust(companyId: string, data: CreateStockAdjustmentDto) {
+    return this.prisma.$transaction(async (transaction) => {
+      const product = await transaction.product.findFirst({
+        where: {
+          id: data.productId,
+          companyId,
+          archivedAt: null,
+        },
+      });
+
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
+      if (data.quantity === product.quantity) {
+        throw new BadRequestException(
+          'New quantity is equal to the current stock',
+        );
+      }
+
+      // Only applies if the stock is still the value we just read, so a
+      // concurrent movement is never silently overwritten.
+      const { count } = await transaction.product.updateMany({
+        where: {
+          id: product.id,
+          quantity: product.quantity,
+        },
+        data: {
+          quantity: data.quantity,
+        },
+      });
+
+      if (count === 0) {
+        throw new ConflictException(STOCK_CHANGED_MESSAGE);
+      }
+
+      const movement = await transaction.stockMovement.create({
+        data: {
+          type: StockMovementType.ADJUSTMENT,
+          reason: data.reason,
+          note: data.note?.trim() || null,
+          quantity: Math.abs(data.quantity - product.quantity),
+          previousQuantity: product.quantity,
+          newQuantity: data.quantity,
+          productId: product.id,
+          companyId,
+        },
+      });
+
+      return {
+        movement,
+        product: { ...product, quantity: data.quantity },
       };
     });
   }

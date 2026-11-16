@@ -12,6 +12,7 @@ import { Request } from 'express';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+import { CreateStockAdjustmentDto } from './dto/create-stock-adjustment.dto';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { FindStockMovementsQueryDto } from './dto/find-stock-movements-query.dto';
 import { StockMovementsService } from './stock-movements.service';
@@ -39,11 +40,19 @@ export class StockMovementsController {
     return this.stockMovementsService.create(request.user.companyId, data);
   }
 
+  @Post('adjustments')
+  adjust(
+    @Req() request: AuthenticatedRequest,
+    @Body() data: CreateStockAdjustmentDto,
+  ) {
+    return this.stockMovementsService.adjust(request.user.companyId, data);
+  }
+
   @ApiQuery({
     name: 'type',
     required: false,
     enum: StockMovementType,
-    description: 'Filter movements by type (IN or OUT)',
+    description: 'Filter movements by type (IN, OUT or ADJUSTMENT)',
   })
   @ApiQuery({
     name: 'page',

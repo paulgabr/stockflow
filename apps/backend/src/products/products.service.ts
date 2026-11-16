@@ -4,6 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  StockAdjustmentReason,
+  StockMovementType,
+} from '../../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -12,17 +16,37 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // The initial stock is recorded as an adjustment, so the movement history
+  // explains the balance from the very first unit.
   async create(companyId: string, data: CreateProductDto) {
     try {
-      return await this.prisma.product.create({
-        data: {
-          name: data.name,
-          sku: data.sku,
-          description: data.description,
-          price: data.price,
-          quantity: data.quantity,
-          companyId,
-        },
+      return await this.prisma.$transaction(async (transaction) => {
+        const product = await transaction.product.create({
+          data: {
+            name: data.name,
+            sku: data.sku,
+            description: data.description,
+            price: data.price,
+            quantity: data.quantity,
+            companyId,
+          },
+        });
+
+        if (product.quantity > 0) {
+          await transaction.stockMovement.create({
+            data: {
+              type: StockMovementType.ADJUSTMENT,
+              reason: StockAdjustmentReason.INITIAL_STOCK,
+              quantity: product.quantity,
+              previousQuantity: 0,
+              newQuantity: product.quantity,
+              productId: product.id,
+              companyId,
+            },
+          });
+        }
+
+        return product;
       });
     } catch (error: unknown) {
       if (

@@ -60,8 +60,16 @@ model Product {
 model StockMovement {
   id          String   @id @default(uuid())
   type        StockMovementType
+  // Always positive. For ADJUSTMENT, the direction comes from
+  // previousQuantity -> newQuantity.
   quantity    Int
   createdAt   DateTime @default(now())
+
+  // Only set for ADJUSTMENT movements.
+  reason           StockAdjustmentReason?
+  note             String?
+  previousQuantity Int?
+  newQuantity      Int?
 
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -78,4 +86,13 @@ model StockMovement {
 enum StockMovementType {
   IN
   OUT
+  ADJUSTMENT
+}
+
+enum StockAdjustmentReason {
+  INITIAL_STOCK
+  INVENTORY_COUNT
+  ENTRY_ERROR
+  DAMAGE_OR_LOSS
+  OTHER
 }

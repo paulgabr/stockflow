@@ -1,8 +1,15 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from '../database/prisma.service';
-import { StockMovementType } from '../../generated/prisma/client';
+import {
+  StockAdjustmentReason,
+  StockMovementType,
+} from '../../generated/prisma/client';
 
 import { StockMovementsService } from './stock-movements.service';
 
@@ -329,6 +336,109 @@ describe('StockMovementsService', () => {
         total: 11,
         totalPages: 2,
       },
+    });
+  });
+
+  describe('adjust', () => {
+    const product = {
+      id: 'product-1',
+      quantity: 100,
+      companyId: 'company-1',
+      archivedAt: null,
+    };
+
+    it('should set the stock and record a downward adjustment', async () => {
+      transactionMock.product.findFirst.mockResolvedValue(product);
+      transactionMock.product.updateMany.mockResolvedValue({ count: 1 });
+      transactionMock.stockMovement.create.mockResolvedValue({ id: 'm-1' });
+
+      const result = await service.adjust('company-1', {
+        productId: 'product-1',
+        quantity: 10,
+        reason: StockAdjustmentReason.ENTRY_ERROR,
+      });
+
+      expect(transactionMock.product.updateMany).toHaveBeenCalledWith({
+        where: { id: 'product-1', quantity: 100 },
+        data: { quantity: 10 },
+      });
+
+      expect(transactionMock.stockMovement.create).toHaveBeenCalledWith({
+        data: {
+          type: StockMovementType.ADJUSTMENT,
+          reason: StockAdjustmentReason.ENTRY_ERROR,
+          note: null,
+          quantity: 90,
+          previousQuantity: 100,
+          newQuantity: 10,
+          productId: 'product-1',
+          companyId: 'company-1',
+        },
+      });
+
+      expect(result.product.quantity).toBe(10);
+    });
+
+    it('should record an upward adjustment with its note', async () => {
+      transactionMock.product.findFirst.mockResolvedValue(product);
+      transactionMock.product.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.adjust('company-1', {
+        productId: 'product-1',
+        quantity: 120,
+        reason: StockAdjustmentReason.OTHER,
+        note: '  Devolução sem nota  ',
+      });
+
+      expect(transactionMock.stockMovement.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          quantity: 20,
+          previousQuantity: 100,
+          newQuantity: 120,
+          note: 'Devolução sem nota',
+        }) as unknown,
+      });
+    });
+
+    it('should reject an adjustment that does not change the stock', async () => {
+      transactionMock.product.findFirst.mockResolvedValue(product);
+
+      await expect(
+        service.adjust('company-1', {
+          productId: 'product-1',
+          quantity: 100,
+          reason: StockAdjustmentReason.INVENTORY_COUNT,
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(transactionMock.product.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException when the stock changed concurrently', async () => {
+      transactionMock.product.findFirst.mockResolvedValue(product);
+      transactionMock.product.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.adjust('company-1', {
+          productId: 'product-1',
+          quantity: 50,
+          reason: StockAdjustmentReason.INVENTORY_COUNT,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(transactionMock.stockMovement.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException for a product of another company', async () => {
+      transactionMock.product.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.adjust('company-2', {
+          productId: 'product-1',
+          quantity: 50,
+          reason: StockAdjustmentReason.INVENTORY_COUNT,
+        }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

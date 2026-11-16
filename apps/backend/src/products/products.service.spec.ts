@@ -7,7 +7,7 @@ import { PrismaService } from '../database/prisma.service';
 describe('ProductsService', () => {
   let service: ProductsService;
 
-  const prismaMock = {
+  const delegatesMock = {
     product: {
       findMany: jest.fn(),
       findFirst: jest.fn(),
@@ -15,6 +15,17 @@ describe('ProductsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    stockMovement: {
+      create: jest.fn(),
+    },
+  };
+
+  const prismaMock = {
+    ...delegatesMock,
+    $transaction: jest.fn(
+      (callback: (transaction: typeof delegatesMock) => Promise<unknown>) =>
+        callback(delegatesMock),
+    ),
   };
 
   beforeEach(async () => {
@@ -125,6 +136,35 @@ describe('ProductsService', () => {
           companyId: 'company-1',
         },
       });
+
+      expect(prismaMock.stockMovement.create).toHaveBeenCalledWith({
+        data: {
+          type: 'ADJUSTMENT',
+          reason: 'INITIAL_STOCK',
+          quantity: 10,
+          previousQuantity: 0,
+          newQuantity: 10,
+          productId: 'product-1',
+          companyId: 'company-1',
+        },
+      });
+    });
+
+    it('should not record a movement when the initial stock is zero', async () => {
+      prismaMock.product.create.mockResolvedValue({
+        id: 'product-1',
+        quantity: 0,
+        companyId: 'company-1',
+      });
+
+      await service.create('company-1', {
+        name: 'Notebook Dell',
+        sku: 'NOTE-001',
+        price: 3499.9,
+        quantity: 0,
+      });
+
+      expect(prismaMock.stockMovement.create).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException when SKU already exists', async () => {
