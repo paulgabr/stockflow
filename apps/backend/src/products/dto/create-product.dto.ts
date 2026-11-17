@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
 } from 'class-validator';
 
@@ -27,4 +28,11 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   quantity: number;
+
+  // Defaults to 10 in the database.
+  @IsInt()
+  @Min(0)
+  @Max(2_147_483_647)
+  @IsOptional()
+  minQuantity?: number;
 }

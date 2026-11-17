@@ -32,7 +32,14 @@ function formatPriceInput(price: string) {
 
 function initialValues(product?: Product): ProductFormValues {
   if (!product) {
-    return { name: "", sku: "", description: "", price: "", quantity: "0" };
+    return {
+      name: "",
+      sku: "",
+      description: "",
+      price: "",
+      minQuantity: "10",
+      quantity: "0",
+    };
   }
 
   return {
@@ -40,6 +47,7 @@ function initialValues(product?: Product): ProductFormValues {
     sku: product.sku,
     description: product.description ?? "",
     price: formatPriceInput(product.price),
+    minQuantity: String(product.minQuantity),
   };
 }
 
@@ -173,13 +181,32 @@ function ProductForm({
         </Field>
       </div>
 
-      {!product && (
+      <div className={product ? undefined : styles.row}>
+        {!product && (
+          <Field
+            name="quantity"
+            label="Estoque inicial"
+            defaultValue={values.quantity}
+            error={errors?.quantity?.[0]}
+            hint="Fica registrado no histórico como saldo inicial."
+          >
+            {(props) => (
+              <input
+                {...props}
+                className={`${styles.input} ${styles.numeric}`}
+                inputMode="numeric"
+                autoComplete="off"
+              />
+            )}
+          </Field>
+        )}
+
         <Field
-          name="quantity"
-          label="Estoque inicial"
-          defaultValue={values.quantity}
-          error={errors?.quantity?.[0]}
-          hint="Fica registrado no histórico como saldo inicial."
+          name="minQuantity"
+          label="Estoque mínimo"
+          defaultValue={values.minQuantity}
+          error={errors?.minQuantity?.[0]}
+          hint="Com esse saldo ou menos, o produto aparece como estoque baixo."
         >
           {(props) => (
             <input
@@ -190,7 +217,7 @@ function ProductForm({
             />
           )}
         </Field>
-      )}
+      </div>
 
       <Field
         name="description"

@@ -150,6 +150,27 @@ describe('ProductsService', () => {
       });
     });
 
+    it('should save the minimum stock when provided', async () => {
+      prismaMock.product.create.mockResolvedValue({
+        id: 'product-1',
+        quantity: 0,
+        minQuantity: 3,
+        companyId: 'company-1',
+      });
+
+      await service.create('company-1', {
+        name: 'Notebook Dell',
+        sku: 'NOTE-001',
+        price: 3499.9,
+        quantity: 0,
+        minQuantity: 3,
+      });
+
+      expect(prismaMock.product.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ minQuantity: 3 }) as unknown,
+      });
+    });
+
     it('should not record a movement when the initial stock is zero', async () => {
       prismaMock.product.create.mockResolvedValue({
         id: 'product-1',

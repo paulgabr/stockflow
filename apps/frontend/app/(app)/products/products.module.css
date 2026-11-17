@@ -245,9 +245,23 @@ th[aria-sort="descending"] .sortButton {
   gap: var(--space-3);
 }
 
+.quantityGroup {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 48px;
+  line-height: 1.25;
+}
+
 .quantity {
-  min-width: 32px;
   font-weight: 600;
+}
+
+.minQuantity {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .badge {
@@ -393,8 +407,9 @@ th[aria-sort="descending"] .sortButton {
     text-align: left;
   }
 
-  .table td:nth-child(4) .quantity {
+  .table td:nth-child(4) .quantityGroup {
     min-width: 0;
+    align-items: flex-start;
   }
 
   .product {

@@ -13,6 +13,8 @@ export type Product = {
   description: string | null;
   price: string;
   quantity: number;
+  // At or below this balance the product is low on stock.
+  minQuantity: number;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;

@@ -4,6 +4,7 @@ import { Package, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { apiFetch } from "@/lib/api";
+import { isStockStatus } from "@/lib/stock-status";
 import type { Product } from "@/lib/types";
 
 import { ProductFormDialog } from "./product-dialogs";
@@ -27,8 +28,15 @@ function NewProductButton() {
   );
 }
 
-export default async function ProductsPage() {
-  const products = await apiFetch<Product[]>("/products");
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [products, { status }] = await Promise.all([
+    apiFetch<Product[]>("/products"),
+    searchParams,
+  ]);
 
   return (
     <>
@@ -50,7 +58,10 @@ export default async function ProductsPage() {
           }
         />
       ) : (
-        <ProductsTable products={products} />
+        <ProductsTable
+          products={products}
+          initialStatus={isStockStatus(status) ? status : undefined}
+        />
       )}
     </>
   );

@@ -30,13 +30,6 @@ const priceField = z
       .max(MAX_PRICE, { error: "Preço acima do limite permitido." }),
   );
 
-const BaseProductSchema = z.object({
-  name: z.string().trim().min(1, { error: "Informe o nome do produto." }),
-  sku: z.string().trim().min(1, { error: "Informe o SKU." }),
-  description: z.string().trim(),
-  price: priceField,
-});
-
 const quantityField = z
   .string()
   .trim()
@@ -47,6 +40,14 @@ const quantityField = z
       .number()
       .max(2_147_483_647, { error: "Quantidade acima do limite permitido." }),
   );
+
+const BaseProductSchema = z.object({
+  name: z.string().trim().min(1, { error: "Informe o nome do produto." }),
+  sku: z.string().trim().min(1, { error: "Informe o SKU." }),
+  description: z.string().trim(),
+  price: priceField,
+  minQuantity: quantityField,
+});
 
 const CreateProductSchema = BaseProductSchema.extend({ quantity: quantityField });
 
@@ -71,6 +72,7 @@ export type ProductFormValues = {
   sku: string;
   description: string;
   price: string;
+  minQuantity: string;
   // Only on create; stock changes afterwards go through adjustStock.
   quantity?: string;
 };
@@ -94,6 +96,7 @@ function readValues(formData: FormData): ProductFormValues {
     sku: get("sku"),
     description: get("description"),
     price: get("price"),
+    minQuantity: get("minQuantity"),
     ...(formData.has("quantity") && { quantity: get("quantity") }),
   };
 }

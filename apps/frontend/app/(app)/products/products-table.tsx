@@ -31,23 +31,20 @@ import {
 } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
+import {
+  getStockStatus,
+  stockStatusLabels as statusLabels,
+  type StockStatus,
+} from "@/lib/stock-status";
 import type { Product } from "@/lib/types";
 
 import { AdjustStockDialog } from "./adjust-stock-dialog";
 import { ArchiveProductDialog, ProductFormDialog } from "./product-dialogs";
 import styles from "./products.module.css";
 
-const LOW_STOCK_THRESHOLD = 10;
 const PAGE_SIZE = 10;
 
-type StockStatus = "in" | "low" | "out";
 type StatusFilter = StockStatus | "all";
-
-const statusLabels: Record<StockStatus, string> = {
-  in: "Em estoque",
-  low: "Estoque baixo",
-  out: "Sem estoque",
-};
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -61,14 +58,6 @@ const currencyFormat = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 const numberFormat = new Intl.NumberFormat("pt-BR");
-
-function getStockStatus(quantity: number): StockStatus {
-  if (quantity === 0) {
-    return "out";
-  }
-
-  return quantity <= LOW_STOCK_THRESHOLD ? "low" : "in";
-}
 
 function normalize(value: string) {
   return value
@@ -105,9 +94,9 @@ const localeSort: SortFn<typeof features, Product> = (rowA, rowB, columnId) =>
 
 const stockStatusFilter: FilterFn<typeof features, Product> = (
   row,
-  columnId,
+  _columnId,
   filterValue: StockStatus,
-) => getStockStatus(row.getValue<number>(columnId)) === filterValue;
+) => getStockStatus(row.original) === filterValue;
 
 const helper = createColumnHelper<typeof features, Product>();
 
@@ -143,11 +132,17 @@ const columns = helper.columns([
     filterFn: stockStatusFilter,
     cell: (info) => {
       const quantity = info.getValue();
-      const status = getStockStatus(quantity);
+      const { minQuantity } = info.row.original;
+      const status = getStockStatus(info.row.original);
 
       return (
         <span className={styles.stock}>
-          <span className={styles.quantity}>{numberFormat.format(quantity)}</span>
+          <span className={styles.quantityGroup}>
+            <span className={styles.quantity}>{numberFormat.format(quantity)}</span>
+            <span className={styles.minQuantity}>
+              mín. {numberFormat.format(minQuantity)}
+            </span>
+          </span>
           <span className={styles.badge} data-status={status}>
             {statusLabels[status]}
           </span>
@@ -210,7 +205,13 @@ const columns = helper.columns([
 
 const numericColumns = new Set(["price", "quantity"]);
 
-export function ProductsTable({ products }: { products: Product[] }) {
+export function ProductsTable({
+  products,
+  initialStatus,
+}: {
+  products: Product[];
+  initialStatus?: StockStatus;
+}) {
   const table = useTable({
     features,
     columns,
@@ -219,6 +220,9 @@ export function ProductsTable({ products }: { products: Product[] }) {
     sortDescFirst: false,
     initialState: {
       sorting: [{ id: "name", desc: false }],
+      columnFilters: initialStatus
+        ? [{ id: "quantity", value: initialStatus }]
+        : [],
       pagination: { pageIndex: 0, pageSize: PAGE_SIZE },
     },
   });
@@ -232,7 +236,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
     };
 
     for (const product of products) {
-      counts[getStockStatus(product.quantity)] += 1;
+      counts[getStockStatus(product)] += 1;
     }
 
     return counts;

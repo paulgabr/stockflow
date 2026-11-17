@@ -28,6 +28,7 @@ export class ProductsService {
             description: data.description,
             price: data.price,
             quantity: data.quantity,
+            minQuantity: data.minQuantity,
             companyId,
           },
         });
