@@ -65,9 +65,11 @@ model StockMovement {
   quantity    Int
   createdAt   DateTime @default(now())
 
+  // Free text, e.g. an invoice or order number.
+  note             String?
+
   // Only set for ADJUSTMENT movements.
   reason           StockAdjustmentReason?
-  note             String?
   previousQuantity Int?
   newQuantity      Int?
 

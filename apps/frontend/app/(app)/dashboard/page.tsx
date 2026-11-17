@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   ArrowDownToLine,
   ArrowLeftRight,
@@ -92,7 +93,14 @@ export default async function DashboardPage() {
       </section>
 
       <section className={styles.panel}>
-        <h2 className={styles.panelTitle}>Últimas movimentações</h2>
+        <div className={styles.panelHeader}>
+          <h2 className={styles.panelTitle}>Últimas movimentações</h2>
+          {movements.data.length > 0 && (
+            <Link href="/movements" className={styles.panelLink}>
+              Ver todas
+            </Link>
+          )}
+        </div>
 
         {movements.data.length === 0 ? (
           <EmptyState

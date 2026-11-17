@@ -65,6 +65,7 @@ export class StockMovementsService {
         data: {
           type: data.type,
           quantity: data.quantity,
+          note: data.note?.trim() || null,
           productId: product.id,
           companyId,
         },
@@ -136,19 +137,20 @@ export class StockMovementsService {
   }
 
   async findAll(companyId: string, query: FindStockMovementsQueryDto) {
-    const { type, page = 1, limit = 10 } = query;
+    const { type, productId, page = 1, limit = 10 } = query;
 
     const where = {
       companyId,
       ...(type && { type }),
+      ...(productId && { productId }),
     };
 
     const [data, total] = await Promise.all([
       this.prisma.stockMovement.findMany({
         where,
-        orderBy: {
-          createdAt: 'desc',
-        },
+        // id breaks ties between movements created in the same instant, so
+        // pages never overlap.
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         include: {
           product: true,
         },

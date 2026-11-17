@@ -1,4 +1,12 @@
-import { IsIn, IsInt, IsUUID, Min } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 import { StockMovementType } from '../../../generated/prisma/client';
 
@@ -13,4 +21,10 @@ export class CreateStockMovementDto {
   @IsInt()
   @Min(1)
   quantity: number;
+
+  // E.g. an invoice or order number.
+  @IsString()
+  @MaxLength(200)
+  @IsOptional()
+  note?: string;
 }

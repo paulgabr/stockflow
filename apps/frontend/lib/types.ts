@@ -13,6 +13,7 @@ export type Product = {
   description: string | null;
   price: string;
   quantity: number;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -32,9 +33,10 @@ export type StockMovement = {
   // Always positive; use getMovementDelta() for the signed change.
   quantity: number;
   createdAt: string;
+  // Free text, e.g. an invoice or order number.
+  note: string | null;
   // Only set for ADJUSTMENT movements.
   reason: StockAdjustmentReason | null;
-  note: string | null;
   previousQuantity: number | null;
   newQuantity: number | null;
   productId: string;

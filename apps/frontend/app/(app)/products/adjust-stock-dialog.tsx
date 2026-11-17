@@ -4,6 +4,8 @@ import { useActionState, useState, type ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { ArrowRight, LoaderCircle, X } from "lucide-react";
 
+import { FormAlert } from "@/components/form-alert";
+import styles from "@/components/form-dialog.module.css";
 import {
   adjustmentReasonLabels,
   manualAdjustmentReasons,
@@ -12,8 +14,6 @@ import {
 import type { Product } from "@/lib/types";
 
 import { adjustStock, type AdjustStockState } from "./actions";
-import { FormAlert } from "./product-dialogs";
-import styles from "./product-dialogs.module.css";
 
 const reasonDescriptions: Record<ManualAdjustmentReason, string> = {
   INVENTORY_COUNT: "A contagem física deu um número diferente do sistema.",

@@ -152,6 +152,7 @@ describe('StockMovementsService', () => {
       data: {
         type: StockMovementType.IN,
         quantity: 5,
+        note: null,
         productId: 'product-1',
         companyId: 'company-1',
       },
@@ -208,6 +209,7 @@ describe('StockMovementsService', () => {
       data: {
         type: StockMovementType.OUT,
         quantity: 3,
+        note: null,
         productId: 'product-1',
         companyId: 'company-1',
       },
@@ -258,9 +260,7 @@ describe('StockMovementsService', () => {
       where: {
         companyId: 'company-1',
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: {
         product: true,
       },
@@ -311,9 +311,7 @@ describe('StockMovementsService', () => {
         companyId: 'company-1',
         type: StockMovementType.OUT,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: {
         product: true,
       },
@@ -336,6 +334,44 @@ describe('StockMovementsService', () => {
         total: 11,
         totalPages: 2,
       },
+    });
+  });
+
+  it('should filter movements by product', async () => {
+    prismaMock.stockMovement.findMany.mockResolvedValue([]);
+    prismaMock.stockMovement.count.mockResolvedValue(0);
+
+    await service.findAll('company-1', {
+      productId: 'product-1',
+      type: StockMovementType.IN,
+    });
+
+    expect(prismaMock.stockMovement.count).toHaveBeenCalledWith({
+      where: {
+        companyId: 'company-1',
+        type: StockMovementType.IN,
+        productId: 'product-1',
+      },
+    });
+  });
+
+  it('should store a trimmed note with the movement', async () => {
+    transactionMock.product.findFirst.mockResolvedValue({
+      id: 'product-1',
+      quantity: 10,
+      companyId: 'company-1',
+    });
+    transactionMock.product.updateMany.mockResolvedValue({ count: 1 });
+
+    await service.create('company-1', {
+      productId: 'product-1',
+      type: StockMovementType.OUT,
+      quantity: 2,
+      note: '  Pedido 55  ',
+    });
+
+    expect(transactionMock.stockMovement.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ note: 'Pedido 55' }) as unknown,
     });
   });
 

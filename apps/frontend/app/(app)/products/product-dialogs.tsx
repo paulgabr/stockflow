@@ -8,12 +8,12 @@ import {
 } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
-  AlertCircle,
   Archive,
   LoaderCircle,
   X,
 } from "lucide-react";
 
+import { FormAlert } from "@/components/form-alert";
 import type { Product } from "@/lib/types";
 
 import {
@@ -24,7 +24,7 @@ import {
   type ProductFormState,
   type ProductFormValues,
 } from "./actions";
-import styles from "./product-dialogs.module.css";
+import styles from "@/components/form-dialog.module.css";
 
 function formatPriceInput(price: string) {
   return Number(price).toFixed(2).replace(".", ",");
@@ -86,19 +86,6 @@ function Field({ name, label, defaultValue, error, hint, children }: FieldProps)
           {hint}
         </p>
       )}
-    </div>
-  );
-}
-
-export function FormAlert({ message }: { message?: string }) {
-  if (!message) {
-    return null;
-  }
-
-  return (
-    <div className={styles.alert} role="alert">
-      <AlertCircle size={18} aria-hidden />
-      {message}
     </div>
   );
 }

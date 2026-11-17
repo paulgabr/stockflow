@@ -53,10 +53,29 @@
   box-shadow: var(--shadow-sm);
 }
 
-.panelTitle {
+.panelHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
   margin-bottom: var(--space-4);
+}
+
+.panelTitle {
   font-size: 17px;
   font-weight: 600;
+}
+
+.panelLink {
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.panelLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .movements {
