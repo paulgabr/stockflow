@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import * as z from "zod";
 
 import { API_URL } from "@/lib/api";
+import { forwardedForHeader } from "@/lib/client-ip";
 import { createSession, deleteSession } from "@/lib/session";
+
+const TOO_MANY_ATTEMPTS_MESSAGE =
+  "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.";
 
 const UNAVAILABLE_MESSAGE =
   "Não foi possível conectar ao servidor. Tente novamente em instantes.";
@@ -51,13 +55,16 @@ type LoginResponse = {
   accessToken: string;
 };
 
-type AuthResult = "ok" | "invalid" | "unavailable" | "error";
+type AuthResult = "ok" | "invalid" | "throttled" | "unavailable" | "error";
 
 async function postJson(path: string, body: unknown) {
   try {
     return await fetch(`${API_URL}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(await forwardedForHeader()),
+      },
       body: JSON.stringify(body),
       cache: "no-store",
     });
@@ -78,6 +85,10 @@ async function authenticate(
 
   if (response.status === 401) {
     return "invalid";
+  }
+
+  if (response.status === 429) {
+    return "throttled";
   }
 
   if (!response.ok) {
@@ -126,6 +137,10 @@ export async function login(
     return { email, message: "E-mail ou senha incorretos." };
   }
 
+  if (result === "throttled") {
+    return { email, message: TOO_MANY_ATTEMPTS_MESSAGE };
+  }
+
   if (result === "error") {
     return { email, message: "Algo deu errado ao entrar. Tente novamente." };
   }
@@ -159,6 +174,10 @@ export async function register(
 
   if (!response) {
     return { values, message: UNAVAILABLE_MESSAGE };
+  }
+
+  if (response.status === 429) {
+    return { values, message: TOO_MANY_ATTEMPTS_MESSAGE };
   }
 
   if (response.status === 409) {
