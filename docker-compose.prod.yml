@@ -1,0 +1,58 @@
+# Production stack: PostgreSQL, API and web app.
+#
+#   cp .env.example .env   # then fill in the secrets
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Only the web app is published. The API and the database are reachable only
+# inside this network, which is why the API can trust X-Forwarded-For from the
+# web app (TRUST_PROXY=1).
+#
+# In production, put the web app behind a reverse proxy that terminates HTTPS
+# and sets X-Forwarded-For (Caddy, Nginx or the hosting platform's). Without
+# it, clients can send their own X-Forwarded-For and dodge per-IP rate limits,
+# and the session cookie, which is Secure outside localhost, needs HTTPS.
+
+name: stockflow
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stockflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-stockflow}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./apps/backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-stockflow}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-stockflow}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      TRUST_PROXY: 1
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./apps/frontend
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:3000
+    ports:
+      - "${WEB_PORT:-3001}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  db_data:
